@@ -2,6 +2,8 @@
 
 Monitor sockets, rooms, events in your socket.io server. This module includes the server and client libraries.
 
+See [socket.io-monitor-cli](https://github.com/byteclubfr/socket.io-monitor-cli) for a realtime dashboard in your console.
+
 ## Installation
 
 ```sh
