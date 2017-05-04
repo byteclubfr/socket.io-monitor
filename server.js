@@ -89,11 +89,17 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
 
     // Monitor messages client → server
     monkeyPatch(ws, 'emit', (name, ...args) => {
+      if (typeof args[args.length - 1] === 'function') {
+        args.pop()
+      }
       e.emit('emit', { id: ws.id, name, args })
     })
 
     // Monitor messages server → client
     monkeyPatch(ws, 'dispatch', ([ name, ...args ]) => {
+      if (typeof args[args.length - 1] === 'function') {
+        args.pop()
+      }
       e.emit('recv', { id: ws.id, name, args })
     })
   })
