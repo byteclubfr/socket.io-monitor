@@ -3,6 +3,7 @@
 const { Type: { forValue: infer, forTypes: union, forSchema: schema } } = require('avsc')
 
 const types = {
+  reqAuth: infer(true),
   password: infer('string'),
   auth: union([ infer({ authorized: true }), infer({ authorized: false, error: 'string' }) ]),
   init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: ['id'] }),
@@ -17,6 +18,7 @@ const types = {
 }
 
 const events = [
+  { name: 'reqAuth',    code: '00', type: types.reqAuth },
   { name: 'password',   code: '01', type: types.password },
   { name: 'auth',       code: '02', type: types.auth },
   { name: 'init',       code: '10', type: types.init },

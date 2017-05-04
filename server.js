@@ -118,7 +118,7 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
 
 
 const connHandler = (emitter, options) => socket => {
-  const { password = null } = options
+  const { password = null, authTimeout = 1500 } = options
 
   const proto = protocol.bindSocket(socket)
 
@@ -144,21 +144,29 @@ const connHandler = (emitter, options) => socket => {
 
   // Authentication
   let authorized = false
+  let timeout = null
   if (!password) {
-    init()
+    proto.emit('reqAuth', false)
+    // Wait for an empty password though, to ensure roundtrip is complete
+    proto.once('password', () => init())
+  } else {
+    proto.emit('reqAuth', true)
+    // Auth timeout
+    const timeout = setTimeout(() => {
+      proto.emit('auth', { authorized: false, error: 'TIMEOUT' })
+      socket.close()
+    }, authTimeout)
+    proto.once('password', pwd => {
+      clearTimeout(timeout)
+      if (pwd === password) {
+        proto.emit('auth', { authorized: true })
+        init()
+      } else {
+        proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
+        socket.close()
+      }
+    })
   }
-  proto.on('password', pwd => {
-    if (authorized) {
-      proto.emit('auth', { authorized: false, error: 'NO_PASSWORD' })
-      socket.emit('error', new Error('Received unexpected password'))
-    } else if (pwd === password) {
-      proto.emit('auth', { authorized: true })
-      init()
-    } else {
-      proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
-      socket.emit('error', new Error('Invalid password'))
-    }
-  })
 }
 
 

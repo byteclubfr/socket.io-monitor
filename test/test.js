@@ -107,6 +107,15 @@ describe('Socket.io Monitor', () => {
       return result.server.then(s => port = s.address().port)
     })
 
+    it('should not send password on passwordless server', () =>
+      monitor.connect({ port, password: 'toto' }).then(
+        // Success → test failed
+        () => Promise.reject(Error('Expected PASSWORD_UNEXPECTED error')),
+        // Error → test succeeded
+        err => expect(err).to.be.instanceOf(Error).have.property('message', 'PASSWORD_UNEXPECTED')
+      )
+    )
+
     it('should init Monitor client', () => {
       const conn = monitor.connect({ port })
       expect(conn).to.be.instanceOf(Promise)
@@ -153,6 +162,43 @@ describe('Socket.io Monitor', () => {
         cb()
       })
     })
+
+  })
+
+  describe('Monitor: client/server with password', () => {
+
+    let port, promiseOfInit
+
+    it('should init Monitor server with password', () => {
+      const result = monitor.bind(ioServer, { server: true, port: 0, password: 'toto' })
+      return result.server.then(s => port = s.address().port)
+    })
+
+    it('should fail connect() without password', () =>
+      monitor.connect({ port }).then(
+        () => Promise.reject(Error('Expected auth error PASSWORD_REQUIRED')),
+        er => expect(er).property('message', 'PASSWORD_REQUIRED')
+      )
+    )
+
+    it('should fail connect() with invalid password', () =>
+      monitor.connect({ port, password: 'tata' }).then(
+        () => Promise.reject(Error('Expected auth error INVALID_PASSWORD')),
+        er => expect(er).property('message', 'INVALID_PASSWORD')
+      )
+    )
+
+    it('should connect() with valid password', () =>
+      monitor.connect({ port, password: 'toto' }).then(c => {
+        promiseOfInit = new Promise(resolve => c.once('init', resolve))
+      })
+    )
+
+    it('should receive initial state', () => promiseOfInit.then(data => {
+      expect(data).to.be.an('object')
+      expect(data).to.have.property('rooms').to.be.an('array')
+      expect(data).to.have.property('sockets').to.be.an('array')
+    }))
 
   })
 
