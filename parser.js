@@ -1,5 +1,6 @@
 'use strict'
 
+const debug = require('debug')('socket.io-monitor:parser')
 const { Type: { forValue: infer, forTypes: union, forSchema: schema } } = require('avsc')
 
 const types = {
@@ -7,14 +8,14 @@ const types = {
   password: infer('string'),
   auth: union([ infer({ authorized: true }), infer({ authorized: false, error: 'string' }) ]),
   init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: ['id'] }),
-  broadcast: infer({ rooms: ['name'], flags: ['flag'], name: 'event name', args: [] }),
+  broadcast: infer({ rooms: ['name'], flags: ['flag'], name: 'event name', args: ['json'] }),
   join: infer({ id: 'id', room: 'name' }),
   leave: infer({ id: 'id', room: 'name' }),
   leaveAll: infer({ id: 'id' }),
   connect: infer({ id: 'id' }),
   disconnect: infer({ id: 'id' }),
-  emit: infer({ id: 'id', name: 'event name', args: [] }),
-  recv: infer({ id: 'id', name: 'event name', args: [] }),
+  emit: infer({ id: 'id', name: 'event name', args: ['json'] }),
+  recv: infer({ id: 'id', name: 'event name', args: ['json'] }),
 }
 
 const events = [
@@ -37,6 +38,8 @@ const findEvent = (f, v) => {
   return found || null
 }
 
+const parseArg = json => JSON.parse(json)
+
 exports.parse = buffer => {
   const code = buffer.slice(0, 2).toString('utf8')
   const event = findEvent('code', code)
@@ -49,8 +52,16 @@ exports.parse = buffer => {
     ? event.type.fromBuffer(buffer.slice(2))
     : null
 
+  if (data.args) {
+    data.args = data.args.map(parseArg)
+  }
+
   return { name, data }
 }
+
+const emptyBuffer = new Buffer('')
+
+const stringifyArg = value => JSON.stringify(value)
 
 exports.stringify = (name, data = null) => {
   const event = findEvent('name', name)
@@ -59,6 +70,10 @@ exports.stringify = (name, data = null) => {
   }
 
   const code = event.code
-  const buffer = data === null ? '' : event.type.toBuffer(data)
+  debug('stringify', { name, code }, data)
+  const validData = data.args
+    ? Object.assign({}, data, { args: data.args.map(stringifyArg) })
+    : data
+  const buffer = data === null ? emptyBuffer : event.type.toBuffer(validData)
   return Buffer.concat([ new Buffer(code), buffer ])
 }
