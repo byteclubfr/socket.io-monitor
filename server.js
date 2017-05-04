@@ -154,7 +154,7 @@ const connHandler = (emitter, options) => socket => {
     // Auth timeout
     const timeout = setTimeout(() => {
       proto.emit('auth', { authorized: false, error: 'TIMEOUT' })
-      socket.close()
+      socket.end()
     }, authTimeout)
     proto.once('password', pwd => {
       clearTimeout(timeout)
@@ -163,7 +163,7 @@ const connHandler = (emitter, options) => socket => {
         init()
       } else {
         proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
-        socket.close()
+        socket.end()
       }
     })
   }
