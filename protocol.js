@@ -5,7 +5,7 @@ const debug = require('debug')('socket.io-monitor:protocol')
 const { parse, stringify } = require('./parser')
 
 
-const END_OF_MESSAGE = new Buffer('\n')
+const END_OF_MESSAGE = new Buffer('~~~')
 
 
 exports.bindSocket = socket => {
@@ -50,7 +50,7 @@ const readMessage = emit => {
       debug('Parse error (message)', msg.toString())
     }
 
-    const rest = buffer.slice(index + 1)
+    const rest = buffer.slice(index + END_OF_MESSAGE.length)
 
     // Check for another message, return the rest (beginning of a new message)
     return read(rest)
