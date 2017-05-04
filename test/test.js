@@ -40,9 +40,11 @@ describe('Socket.io Monitor', () => {
     it('should expose io state', () => {
       expect(emitter).to.have.property('getState').to.be.a('function')
       const state = emitter.getState()
-      expect(state).to.be.an('object')
-      expect(state).to.have.property('rooms').to.be.an('array')
-      expect(state).to.have.property('connections').to.be.an('array')
+      expect(state).to.be.instanceOf(Promise)
+      return state.then(data => {
+        expect(data).to.have.property('rooms').to.be.an('array')
+        expect(data).to.have.property('sockets').to.be.an('array')
+      })
     })
 
     it('should watch: ws connection', cb => {
@@ -96,14 +98,14 @@ describe('Socket.io Monitor', () => {
       return conn.then(c => {
         client = c
         // Watch 'init' event
-        promiseOfInit = new Promise(resolve => client.on('init', resolve))
+        promiseOfInit = new Promise(resolve => client.once('init', resolve))
       })
     })
 
     it('should receive initial state', () => promiseOfInit.then(data => {
       expect(data).to.be.an('object')
       expect(data).to.have.property('rooms').to.be.an('array')
-      expect(data).to.have.property('connections').to.be.an('array')
+      expect(data).to.have.property('sockets').to.be.an('array')
     }))
 
     it('should watch: ws connection', cb => {

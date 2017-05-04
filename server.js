@@ -94,7 +94,7 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
     })
   })
 
-  e.getState = () => getInitialState(io)
+  e.getState = () => getState(io)
 
   // Debug (oh look, a synthetic list of all events you could use as documentation)
   if (debug.enabled) {
@@ -121,7 +121,11 @@ const connHandler = (emitter, options) => socket => {
   // Plug TCP socket to local emitter
   const init = () => {
     authorized = true
-    setImmediate(() => proto.emit('init', emitter.getState()))
+    setImmediate(() => {
+      emitter.getState()
+      .then(data => proto.emit('init', data))
+      .catch(err => proto.emit('error', err.message))
+    })
     // Retransmit events
     emitter
     .on('broadcast', data => proto.emit('broadcast', data))
@@ -154,8 +158,36 @@ const connHandler = (emitter, options) => socket => {
 }
 
 
-// TODO
-const getInitialState = io => ({
-  rooms: [],
-  connections: []
+// Grab rooms & sockets data
+const getState = io => Promise.resolve().then(() => {
+  // Aggregate data from rooms
+  const forEachRoom = (fn, initial) => Object.keys(io.sockets.adapter.rooms).reduce((data, name) => {
+    const info = io.sockets.adapter.rooms[name]
+    return fn(data, info, name)
+  }, initial)
+
+  // rooms: Array<{ name: string, sockets: Array<string> }>
+  const rooms = forEachRoom((rooms, info, name) => {
+    if (info.length === 1 && info.sockets[name]) {
+      // A personal room, juste skip it
+      return rooms
+    }
+    rooms.push({
+      name,
+      sockets: Object.keys(info.sockets).filter(id => info.sockets[id])
+    })
+    return rooms
+  }, [])
+
+  // sockets: Array<string>
+  const sockets = Object.keys(forEachRoom((dict, info, name) => {
+    Object.keys(info.sockets).forEach(id => {
+      if (info.sockets[id]) {
+        dict[id] = true
+      }
+    })
+    return dict
+  }, {}))
+
+  return { rooms, sockets }
 })
