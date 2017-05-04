@@ -1,0 +1,22 @@
+{
+  "name": "socket.io-monitor",
+  "version": "1.0.0",
+  "description": "Monitor sockets, rooms, events in your socket.io server. This module includes the server and client libraries. Edit",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byteclubfr/socket.io-monitor.git"
+  },
+  "author": "Nicolas Chambrier <naholyr@gmail.com> (http://naholyr.fr/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/byteclubfr/socket.io-monitor/issues"
+  },
+  "homepage": "https://github.com/byteclubfr/socket.io-monitor#readme",
+  "dependencies": {
+    "debug": "^2.6.3"
+  }
+}
