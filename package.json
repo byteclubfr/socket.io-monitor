@@ -4,7 +4,7 @@
   "description": "Monitor sockets, rooms, events in your socket.io server. This module includes the server and client libraries. Edit",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --check-leaks"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,11 @@
   "homepage": "https://github.com/byteclubfr/socket.io-monitor#readme",
   "dependencies": {
     "debug": "^2.6.3"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "socket.io": "^1.7.3",
+    "socket.io-client": "^1.7.3"
   }
 }

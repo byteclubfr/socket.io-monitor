@@ -22,7 +22,7 @@ exports.bindSocket = socket => {
   // Emit message = send to remote socket
   e.emit = (name, data) => {
     try {
-      socket.write(Buffer.concat([ stringify(name, data), END_OF_MESSAGE ])
+      socket.write(Buffer.concat([ stringify(name, data), END_OF_MESSAGE ]))
     } catch (err) {
       debug('Serialize error', err)
       debug('Serialize error (data)', { name, data })
@@ -33,9 +33,13 @@ exports.bindSocket = socket => {
 }
 
 
-const readMessage = emit => buffer => {
-  const index = buffer.indexOf(END_OF_MESSAGE)
-  if (index !== -1) {
+const readMessage = emit => {
+  const read = buffer => {
+    const index = buffer.indexOf(END_OF_MESSAGE)
+    if (index === -1) {
+      return buffer
+    }
+
     const msg = buffer.slice(0, index)
 
     try {
@@ -49,6 +53,7 @@ const readMessage = emit => buffer => {
     const rest = buffer.slice(index + 1)
 
     // Check for another message, return the rest (beginning of a new message)
-    return extractMessage(rest)
+    return read(rest)
   }
+  return read
 }

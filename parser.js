@@ -12,7 +12,7 @@ const events = [
   { name: 'disconnect', code: '16' },
   { name: 'emit',       code: '17' },
   { name: 'recv',       code: '18' },
-}
+]
 
 const eventCode = name => {
   const found = events.find(e => e.name === name)

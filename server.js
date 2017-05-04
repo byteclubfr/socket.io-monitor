@@ -24,11 +24,11 @@ module.exports = (io, options = {}) => {
 
   return server
     ? { emitter, server: initServer(emitter, options) }
-    : { emitter }
+    : { emitter, server: null }
 }
 
 
-const initServer = exports.initServer = (emitter, options) => new Promise((resolve, reject) => {
+const initServer = exports.initServer = (emitter, options = {}) => new Promise((resolve, reject) => {
   const { port = 9042, host = 'localhost' } = options
 
   const server = createServer()
@@ -37,7 +37,7 @@ const initServer = exports.initServer = (emitter, options) => new Promise((resol
 
   server.once('listening', () => {
     resolve(server)
-    server.on('connection', connHandler(emitter))
+    server.on('connection', connHandler(emitter, options))
   })
 
   server.once('error', err => reject(err))
@@ -53,10 +53,10 @@ const monkeyPatch = (object, method, fn) => {
 }
 
 
-const initEmitter = exports.initEmitter = (io, options) => {
+const initEmitter = exports.initEmitter = (io, options = {}) => {
   const e = new EventEmitter();
 
-  const adapter = io.adapter()
+  const adapter = io.sockets.adapter
 
   // Monitor broadcasts
   monkeyPatch(adapter, 'broadcast', (packet, { rooms, flags }) => {
@@ -92,6 +92,8 @@ const initEmitter = exports.initEmitter = (io, options) => {
     })
   })
 
+  e.getState = () => getInitialState(io)
+
   // Debug (oh look, a synthetic list of all events you could use as documentation)
   if (debug.enabled) {
     e
@@ -109,10 +111,26 @@ const initEmitter = exports.initEmitter = (io, options) => {
 }
 
 
-const connHandler = (io, emitter) => socket => {
+const connHandler = (emitter, options) => socket => {
   const { password = null } = options
 
   const proto = protocol.bindSocket(socket)
+
+  // Plug TCP socket to local emitter
+  const init = () => {
+    authorized = true
+    setImmediate(() => proto.emit('init', emitter.getState()))
+    // Retransmit events
+    emitter
+    .on('broadcast', data => proto.emit('broadcast', data))
+    .on('join', data => proto.emit('join', data))
+    .on('leave', data => proto.emit('leave', data))
+    .on('leaveAll', data => proto.emit('leaveAll', data))
+    .on('connect', data => proto.emit('connect', data))
+    .on('disconnect', data => proto.emit('disconnect', data))
+    .on('emit', data => proto.emit('emit', data))
+    .on('recv', data => proto.emit('recv', data))
+  }
 
   // Authentication
   let authorized = false
@@ -131,20 +149,11 @@ const connHandler = (io, emitter) => socket => {
       socket.emit('error', new Error('Invalid password'))
     }
   })
-
-  // Plug TCP socket to local emitter
-  const init = () => {
-    authorized = true
-    proto.emit('init', getInitialState(io))
-    // Retransmit events
-    emitter
-    .on('broadcast', data => proto.emit('broadcast', data))
-    .on('join', data => proto.emit('join', data))
-    .on('leave', data => proto.emit('leave', data))
-    .on('leaveAll', data => proto.emit('leaveAll', data))
-    .on('connect', data => proto.emit('connect', data))
-    .on('disconnect', data => proto.emit('disconnect', data))
-    .on('emit', data => proto.emit('emit', data))
-    .on('recv', data => proto.emit('recv', data))
-  }
 }
+
+
+// TODO
+const getInitialState = io => ({
+  rooms: [],
+  connections: []
+})

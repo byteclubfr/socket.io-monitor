@@ -1,6 +1,6 @@
 'use strict'
 
 module.exports = {
-  server: require('./server'),
-  client: require('./client')
+  bind: require('./server'),
+  connect: require('./client')
 }
