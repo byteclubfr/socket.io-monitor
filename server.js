@@ -3,6 +3,7 @@
 const { createServer } = require('net')
 const EventEmitter = require('events')
 const debug = require('debug')('socket.io-monitor')
+const protocol = require('./protocol')
 
 
 /**
@@ -29,8 +30,6 @@ module.exports = (io, options = {}) => {
 
 const initServer = exports.initServer = (emitter, options) => new Promise((resolve, reject) => {
   const { port = 9042, host = 'localhost' } = options
-
-  throw new Error('Not implemented yet')
 
   const server = createServer()
 
@@ -107,4 +106,45 @@ const initEmitter = exports.initEmitter = (io, options) => {
   }
 
   return e
+}
+
+
+const connHandler = (io, emitter) => socket => {
+  const { password = null } = options
+
+  const proto = protocol.bindSocket(socket)
+
+  // Authentication
+  let authorized = false
+  if (!password) {
+    init()
+  }
+  proto.on('password', pwd => {
+    if (authorized) {
+      proto.emit('auth', { authorized: false, error: 'NO_PASSWORD' })
+      socket.emit('error', new Error('Received unexpected password'))
+    } else if (pwd === password) {
+      proto.emit('auth', { authorized: true })
+      init()
+    } else {
+      proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
+      socket.emit('error', new Error('Invalid password'))
+    }
+  })
+
+  // Plug TCP socket to local emitter
+  const init = () => {
+    authorized = true
+    proto.emit('init', getInitialState(io))
+    // Retransmit events
+    emitter
+    .on('broadcast', data => proto.emit('broadcast', data))
+    .on('join', data => proto.emit('join', data))
+    .on('leave', data => proto.emit('leave', data))
+    .on('leaveAll', data => proto.emit('leaveAll', data))
+    .on('connect', data => proto.emit('connect', data))
+    .on('disconnect', data => proto.emit('disconnect', data))
+    .on('emit', data => proto.emit('emit', data))
+    .on('recv', data => proto.emit('recv', data))
+  }
 }
