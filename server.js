@@ -59,8 +59,12 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
   const adapter = io.sockets.adapter
 
   // Monitor broadcasts
-  monkeyPatch(adapter, 'broadcast', (packet, { rooms, flags }) => {
-    e.emit('broadcast', { packet, rooms, flags })
+  monkeyPatch(adapter, 'broadcast', (packet, { rooms = [], flags = {} }) => {
+    if (packet.type === 2) {
+      const [ name, ...args ] = packet.data
+      const flagsList = Object.keys(flags).filter(f => flags[f])
+      e.emit('broadcast', { name, args, rooms, flags: flagsList })
+    }
   })
 
   // Monitor rooms
@@ -99,7 +103,7 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
   // Debug (oh look, a synthetic list of all events you could use as documentation)
   if (debug.enabled) {
     e
-    .on('broadcast', ({ packet, rooms, flags }) => debug('broadcast', rooms, packet))
+    .on('broadcast', ({ name, args, rooms, flags }) => debug('broadcast', name, args, rooms, flags))
     .on('join', ({ id, room }) => debug('join', id, room))
     .on('leave', ({ id, room }) => debug('leave', id, room))
     .on('leaveAll', ({ id }) => debug('leaveAll', id))
