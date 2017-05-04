@@ -48,6 +48,7 @@ exports.parse = buffer => {
   }
 
   const name = event.name
+  debug('parse', { name, code }, buffer)
   const data = buffer.length > 2
     ? event.type.fromBuffer(buffer.slice(2))
     : null
@@ -55,6 +56,8 @@ exports.parse = buffer => {
   if (data.args) {
     data.args = data.args.map(parseArg)
   }
+
+  debug('parsed', { name, code }, data)
 
   return { name, data }
 }
