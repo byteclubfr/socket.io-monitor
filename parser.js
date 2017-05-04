@@ -1,42 +1,62 @@
 'use strict'
 
-const events = [
-  { name: 'password',   code: '01' },
-  { name: 'auth',       code: '02' },
-  { name: 'init',       code: '10' },
-  { name: 'broadcast',  code: '11' },
-  { name: 'join',       code: '12' },
-  { name: 'leave',      code: '13' },
-  { name: 'leaveAll',   code: '14' },
-  { name: 'connect',    code: '15' },
-  { name: 'disconnect', code: '16' },
-  { name: 'emit',       code: '17' },
-  { name: 'recv',       code: '18' },
-]
+const { Type: { forValue: infer, forTypes: union, forSchema: schema } } = require('avsc')
 
-const eventCode = name => {
-  const found = events.find(e => e.name === name)
-  return found ? found.code : null
+const types = {
+  password: infer('string'),
+  auth: union([ infer({ authorized: true }), infer({ authorized: false, error: 'string' }) ]),
+  init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: ['id'] }),
+  broadcast: infer({ rooms: ['name'], flags: ['flag'], name: 'event name', args: [] }),
+  join: infer({ id: 'id', room: 'name' }),
+  leave: infer({ id: 'id', room: 'name' }),
+  leaveAll: infer({ id: 'id' }),
+  connect: infer({ id: 'id' }),
+  disconnect: infer({ id: 'id' }),
+  emit: infer({ id: 'id', name: 'event name', args: [] }),
+  recv: infer({ id: 'id', name: 'event name', args: [] }),
 }
 
-const eventName = code => {
-  const found = events.find(e => e.code === code)
-  return found ? found.name : null
+const events = [
+  { name: 'password',   code: '01', type: types.password },
+  { name: 'auth',       code: '02', type: types.auth },
+  { name: 'init',       code: '10', type: types.init },
+  { name: 'broadcast',  code: '11', type: types.broadcast },
+  { name: 'join',       code: '12', type: types.join },
+  { name: 'leave',      code: '13', type: types.leave },
+  { name: 'leaveAll',   code: '14', type: types.leaveAll },
+  { name: 'connect',    code: '15', type: types.connect },
+  { name: 'disconnect', code: '16', type: types.disconnect },
+  { name: 'emit',       code: '17', type: types.emit },
+  { name: 'recv',       code: '18', type: types.recv },
+]
+
+const findEvent = (f, v) => {
+  const found = events.find(e => e[f] === v)
+  return found || null
 }
 
 exports.parse = buffer => {
-  const [ code, data ] = JSON.parse(buffer)
-  const name = eventName(code)
-  if (name === null) {
+  const code = buffer.slice(0, 2).toString('utf8')
+  const event = findEvent('code', code)
+  if (!event) {
     throw new Error('Unknown event code: ' + code)
   }
+
+  const name = event.name
+  const data = buffer.length > 2
+    ? event.type.fromBuffer(buffer.slice(2))
+    : null
+
   return { name, data }
 }
 
 exports.stringify = (name, data = null) => {
-  const code = eventCode(name)
-  if (code === null) {
+  const event = findEvent('name', name)
+  if (!event) {
     throw new Error('Unknown event name: ' + name)
   }
-  return new Buffer(JSON.stringify([code, data]))
+
+  const code = event.code
+  const buffer = data === null ? '' : event.type.toBuffer(data)
+  return Buffer.concat([ new Buffer(code), buffer ])
 }

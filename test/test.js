@@ -113,7 +113,7 @@ describe('Socket.io Monitor', () => {
       return conn.then(c => {
         client = c
         // Watch 'init' event
-        promiseOfInit = new Promise(resolve => client.once('init', resolve))
+        promiseOfInit = new Promise(resolve => c.once('init', resolve))
       })
     })
 

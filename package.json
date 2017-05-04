@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/byteclubfr/socket.io-monitor#readme",
   "dependencies": {
+    "avsc": "^5.0.1",
     "debug": "^2.6.3"
   },
   "devDependencies": {
