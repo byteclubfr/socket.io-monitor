@@ -67,16 +67,12 @@ describe('Socket.io Monitor', () => {
         setImmediate(() => socket.join('room1'))
       })
       ioClient = socketioClient(ioUrl)
-      // Socket joins his own room
+      // Socket joins his own room: this is skipped
+      // Then he joins the specific ones
       emitter.once('join', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-        expect(data).to.have.property('room').to.equal(data.id)
-        // Then he joins the specific ones
-        emitter.once('join', data => {
-          expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-          expect(data).to.have.property('room').to.equal('room1')
-          cb()
-        })
+        expect(data).to.have.property('room').to.equal('room1')
+        cb()
       })
     })
 
@@ -132,16 +128,12 @@ describe('Socket.io Monitor', () => {
         setImmediate(() => socket.join('room1'))
       })
       ioClient = socketioClient(ioUrl)
-      // Socket joins his own room
+      // Socket joins his own room: this is skipped
+      // Then he joins the specific ones
       client.once('join', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-        expect(data).to.have.property('room').to.equal(data.id)
-        // Then he joins the specific ones
-        client.once('join', data => {
-          expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-          expect(data).to.have.property('room').to.equal('room1')
-          cb()
-        })
+        expect(data).to.have.property('room').to.equal('room1')
+        cb()
       })
     })
 

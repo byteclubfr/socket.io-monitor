@@ -65,7 +65,9 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
 
   // Monitor rooms
   monkeyPatch(adapter, 'add', (id, room) => {
-    e.emit('join', { id, room })
+    if (id !== room) {
+      e.emit('join', { id, room })
+    }
   })
   monkeyPatch(adapter, 'del', (id, room) => {
     e.emit('leave', { id, room })
