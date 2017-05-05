@@ -125,59 +125,79 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
 
 const noop = () => {}
 
-const connHandler = (emitter, options) => socket => {
+const connHandler = (emitter, options) => {
   const { password = null, authTimeout = 1500, onError = noop } = options
 
-  socket.on('error', err => debug('socket error', err))
-  socket.on('error', noop)
-
-  const proto = protocol.bindSocket(socket)
-
-  // Plug TCP socket to local emitter
-  const init = () => {
-    authorized = true
+  // Store list of all bound protocols, avoids memory leak by binding too many handlers
+  let protos = []
+  const addProto = proto => {
+    protos = protos.concat([ proto ])
     setImmediate(() => {
       emitter.getState()
       .then(data => proto.emit('init', data))
       .catch(err => proto.emit('error', err.message))
     })
-    // Retransmit events
-    emitter
-    .on('string', data => proto.emit('string', data))
-    .on('broadcast', data => proto.emit('broadcast', data))
-    .on('join', data => proto.emit('join', data))
-    .on('leave', data => proto.emit('leave', data))
-    .on('leaveAll', data => proto.emit('leaveAll', data))
-    .on('connect', data => proto.emit('connect', data))
-    .on('disconnect', data => proto.emit('disconnect', data))
-    .on('emit', data => proto.emit('emit', data))
-    .on('recv', data => proto.emit('recv', data))
+  }
+  const removeProto = proto => {
+    protos = protos.filter(p => p !== proto)
+    proto.removeAllListeners()
+  }
+  const dispatch = name => data => {
+    protos.forEach(proto => proto.emit(name, data))
   }
 
-  // Authentication
-  let authorized = false
-  let timeout = null
-  if (!password) {
-    proto.emit('reqAuth', false)
-    // Wait for an empty password though, to ensure roundtrip is complete
-    proto.once('password', () => init())
-  } else {
-    proto.emit('reqAuth', true)
-    // Auth timeout
-    const timeout = setTimeout(() => {
-      proto.emit('auth', { authorized: false, error: 'TIMEOUT' })
-      socket.end()
-    }, authTimeout)
-    proto.once('password', pwd => {
-      clearTimeout(timeout)
-      if (pwd === password) {
-        proto.emit('auth', { authorized: true })
-        init()
-      } else {
-        proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
+  // Retransmit events
+  emitter
+  .on('string', dispatch('string'))
+  .on('broadcast', dispatch('broadcast'))
+  .on('join', dispatch('join'))
+  .on('leave', dispatch('leave'))
+  .on('leaveAll', dispatch('leaveAll'))
+  .on('connect', dispatch('connect'))
+  .on('disconnect', dispatch('disconnect'))
+  .on('emit', dispatch('emit'))
+  .on('recv', dispatch('recv'))
+
+  return socket => {
+    socket.on('error', err => debug('socket error', err))
+    socket.on('error', noop)
+
+    const proto = protocol.bindSocket(socket)
+
+    socket.on('close', () => removeProto(proto))
+
+    let authorized = false
+
+    // Plug TCP socket to local emitter
+    const init = () => {
+      authorized = true
+      addProto(proto)
+    }
+
+    // Authentication
+    let timeout = null
+    if (!password) {
+      proto.emit('reqAuth', false)
+      // Wait for an empty password though, to ensure roundtrip is complete
+      proto.once('password', () => init())
+    } else {
+      proto.emit('reqAuth', true)
+      // Auth timeout
+      const timeout = setTimeout(() => {
+        proto.emit('auth', { authorized: false, error: 'TIMEOUT' })
         socket.end()
-      }
-    })
+      }, authTimeout)
+      proto.once('password', pwd => {
+        clearTimeout(timeout)
+        if (pwd === password) {
+          proto.emit('auth', { authorized: true })
+          init()
+        } else {
+          proto.emit('auth', { authorized: false, error: 'INVALID_PASSWORD' })
+          socket.end()
+        }
+      })
+    }
   }
 }
 
