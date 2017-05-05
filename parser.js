@@ -17,6 +17,7 @@ const types = {
   emit: infer({ id: 'id', name: 'event name', args: ['json'] }),
   recv: infer({ id: 'id', name: 'event name', args: ['json'] }),
   string: infer({ id: 'id', string: 'string' }),
+  error: infer('message'),
 }
 
 const events = [
@@ -33,6 +34,7 @@ const events = [
   { name: 'emit',       code: '17', type: types.emit },
   { name: 'recv',       code: '18', type: types.recv },
   { name: 'string',     code: '20', type: types.string },
+  { name: 'error',      code: '99', type: types.error },
 ]
 
 const findEvent = (f, v) => {
