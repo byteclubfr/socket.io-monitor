@@ -210,29 +210,23 @@ const getState = io => Promise.resolve().then(() => {
   // Aggregate data from rooms
   const forEachRoom = (fn, initial) => Object.keys(io.sockets.adapter.rooms).reduce((data, name) => {
     const info = io.sockets.adapter.rooms[name]
-    return fn(data, info, name)
+    const sockets = Object.keys(info.sockets).filter(id => info.sockets[id] && io.sockets.sockets[id])
+    return fn(data, sockets, name)
   }, initial)
 
   // rooms: Array<{ name: string, sockets: Array<string> }>
-  const rooms = forEachRoom((rooms, info, name) => {
-    if (info.length === 1 && info.sockets[name]) {
-      // A personal room, juste skip it
+  const rooms = forEachRoom((rooms, sockets, name) => {
+    if (sockets.length === 1 && sockets[0] === name) {
+      // A personal room, just skip it
       return rooms
     }
-    rooms.push({
-      name,
-      sockets: Object.keys(info.sockets).filter(id => info.sockets[id])
-    })
+    rooms.push({ name, sockets })
     return rooms
   }, [])
 
   // sockets: Array<string>
-  const sockets = Object.keys(forEachRoom((dict, info, name) => {
-    Object.keys(info.sockets).forEach(id => {
-      if (info.sockets[id]) {
-        dict[id] = true
-      }
-    })
+  const sockets = Object.keys(forEachRoom((dict, sockets, name) => {
+    sockets.forEach(id => dict[id] = true)
     return dict
   }, {}))
 
