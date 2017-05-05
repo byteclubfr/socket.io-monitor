@@ -1,6 +1,6 @@
 {
   "name": "socket.io-monitor",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Monitor sockets, rooms, events in your socket.io server. This module includes the server and client libraries. Edit",
   "main": "index.js",
   "scripts": {
