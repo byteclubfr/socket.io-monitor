@@ -16,6 +16,7 @@ const types = {
   disconnect: infer({ id: 'id' }),
   emit: infer({ id: 'id', name: 'event name', args: ['json'] }),
   recv: infer({ id: 'id', name: 'event name', args: ['json'] }),
+  string: infer({ id: 'id', string: 'string' }),
 }
 
 const events = [
@@ -31,6 +32,7 @@ const events = [
   { name: 'disconnect', code: '16', type: types.disconnect },
   { name: 'emit',       code: '17', type: types.emit },
   { name: 'recv',       code: '18', type: types.recv },
+  { name: 'string',     code: '20', type: types.string },
 ]
 
 const findEvent = (f, v) => {

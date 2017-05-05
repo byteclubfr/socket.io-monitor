@@ -109,6 +109,7 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
   // Debug (oh look, a synthetic list of all events you could use as documentation)
   if (debug.enabled) {
     e
+    .on('string', ({ id, string }) => debug('string', id, string))
     .on('broadcast', ({ name, args, rooms, flags }) => debug('broadcast', name, args, rooms, flags))
     .on('join', ({ id, room }) => debug('join', id, room))
     .on('leave', ({ id, room }) => debug('leave', id, room))
@@ -142,6 +143,7 @@ const connHandler = (emitter, options) => socket => {
     })
     // Retransmit events
     emitter
+    .on('string', data => proto.emit('string', data))
     .on('broadcast', data => proto.emit('broadcast', data))
     .on('join', data => proto.emit('join', data))
     .on('leave', data => proto.emit('leave', data))
