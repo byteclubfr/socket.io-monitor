@@ -122,9 +122,13 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
   return e
 }
 
+const noop = () => {}
 
 const connHandler = (emitter, options) => socket => {
-  const { password = null, authTimeout = 1500 } = options
+  const { password = null, authTimeout = 1500, onError = noop } = options
+
+  socket.on('error', err => debug('socket error', err))
+  socket.on('error', noop)
 
   const proto = protocol.bindSocket(socket)
 
