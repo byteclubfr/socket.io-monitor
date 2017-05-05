@@ -134,7 +134,10 @@ const connHandler = (emitter, options) => {
     protos = protos.concat([ proto ])
     setImmediate(() => {
       emitter.getState()
-      .then(data => proto.emit('init', data))
+      .then(data => {
+        emitter.emit('client', { client: proto, state: data })
+        proto.emit('init', data)
+      })
       .catch(err => proto.emit('error', err.message))
     })
   }

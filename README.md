@@ -57,6 +57,9 @@ client.then(emitter => {
 
 * (remote only) **init** ``state``
   * (local only) method *getState()* returns ``state``
+* (local only) **client** ``{ client, state }``
+  * ``client`` is the remote monitor client (you can listen/emit to all *remote* events)
+  * ``state`` is the initial state data, sent along *init* event
 * **broadcast** ``{ name, args, rooms, flags }``
 * **join** ``{ id, room }``
 * **leave** ``{ id, room }``
@@ -83,6 +86,7 @@ const { emitter } = monitor.bind(io, options)
 
 io.on('connection', socket => {
   socket.on('login', username => {
+    // store somewhere that socket is bound to this username
     emitter.emit('string', { id: socket.id, string: username })
   })
 })
@@ -98,5 +102,22 @@ emitter.on('join', ({ id, room }) => {
   if (room.match(/^user:/)) {
     emitter.emit('string', { id, string: room.substring(5) })
   }
+})
+```
+
+In both cases however, emitting string representation just when a socket connects is not enough: when you connect a monitor client, it will fetch existing sockets and will not receive *string* events for them. In current version it's up to you to handle this case too. This part may change in the future to make it easier. The current best way is to listen for *client* event which is called when a monitor client receives state data:
+
+```js
+emitter.on('client', (client, state) => {
+  // state.rooms = list of rooms with socket ids in them
+  // state.sockets = list of socket ids
+  // in our sample, an identified socket is in a room named "user:$username"
+  state.rooms.forEach(({ name, sockets }) => {
+    if (name.match(/^user:/)) {
+      const id = sockets[0]
+      const string = name.substring(5)
+      client.emit('string', { id, string })
+    }
+  })
 })
 ```
