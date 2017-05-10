@@ -23,7 +23,10 @@ const { emitter } = monitor.bind(io, { server: false })
 
 ```js
 emitter.getState()
-// { rooms: [ { name: 'room1', sockets: [ 'id1', 'id2' ] } ], sockets: [ 'id1', 'id2', … ] }
+/* {
+  rooms: [ { name: 'room1', sockets: [ 'id1', 'id2' ] }, … ],
+  sockets: [ { id: 'id1', connectedAt: 12345 }, { id: 'id2', connectedAt: 56789 }, … ]
+} */
 
 emitter.on('join', ({ id, room }) => console.log('socket %s joins room %s', id, room))
 ```
@@ -74,7 +77,7 @@ client.then(emitter => {
 ### State
 
 * **rooms**: ``[ { name: string, sockets: [ string ] } ]``
-* **sockets**: ``[ string ]``
+* **sockets**: ``[ { id: string, connectedAt: timestamp-ms } ]``
 
 ### Socket string representation
 
@@ -110,7 +113,7 @@ In both cases however, emitting string representation just when a socket connect
 ```js
 emitter.on('client', (client, state) => {
   // state.rooms = list of rooms with socket ids in them
-  // state.sockets = list of socket ids
+  // state.sockets = list of sockets
   // in our sample, an identified socket is in a room named "user:$username"
   state.rooms.forEach(({ name, sockets }) => {
     if (name.match(/^user:/)) {

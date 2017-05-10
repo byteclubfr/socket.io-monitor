@@ -1,13 +1,13 @@
 'use strict'
 
 const debug = require('debug')('socket.io-monitor:parser')
-const { Type: { forValue: infer, forTypes: union, forSchema: schema } } = require('avsc')
+const { Type: { forValue: infer, forTypes: union } } = require('avsc')
 
 const types = {
   reqAuth: infer(true),
   password: infer('string'),
   auth: union([ infer({ authorized: true }), infer({ authorized: false, error: 'string' }) ]),
-  init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: ['id'] }),
+  init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: [{ id: 'id', connectedAt: 1494426891618 }] }),
   broadcast: infer({ rooms: ['name'], flags: ['flag'], name: 'event name', args: ['json'] }),
   join: infer({ id: 'id', room: 'name' }),
   leave: infer({ id: 'id', room: 'name' }),

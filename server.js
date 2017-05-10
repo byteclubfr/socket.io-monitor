@@ -54,7 +54,7 @@ const monkeyPatch = (object, method, fn) => {
 
 
 const initEmitter = exports.initEmitter = (io, options = {}) => {
-  const e = new EventEmitter();
+  const e = new EventEmitter()
 
   const adapter = io.sockets.adapter
 
@@ -208,27 +208,34 @@ const connHandler = (emitter, options) => {
 // Grab rooms & sockets data
 const getState = io => Promise.resolve().then(() => {
   // Aggregate data from rooms
-  const forEachRoom = (fn, initial) => Object.keys(io.sockets.adapter.rooms).reduce((data, name) => {
-    const info = io.sockets.adapter.rooms[name]
-    const sockets = Object.keys(info.sockets).filter(id => info.sockets[id] && io.sockets.sockets[id])
-    return fn(data, sockets, name)
-  }, initial)
+  const forEachRoom = (fn, initial) =>
+    Object.keys(io.sockets.adapter.rooms).reduce((data, name) => {
+      const info = io.sockets.adapter.rooms[name]
+      const sockets = Object.entries(io.sockets.sockets)
+        .map(([id, socket]) => ({ id, connectedAt: socket.handshake.issued }))
+        .filter(({ id }) => info.sockets[id] && io.sockets.sockets[id])
+
+      return fn(data, sockets, name)
+    }, initial)
 
   // rooms: Array<{ name: string, sockets: Array<string> }>
   const rooms = forEachRoom((rooms, sockets, name) => {
-    if (sockets.length === 1 && sockets[0] === name) {
+    if (sockets.length === 1 && sockets[0].id === name) {
       // A personal room, just skip it
       return rooms
     }
-    rooms.push({ name, sockets })
+    rooms.push({ name, sockets: sockets.map(s => s.id) })
     return rooms
   }, [])
 
-  // sockets: Array<string>
-  const sockets = Object.keys(forEachRoom((dict, sockets, name) => {
-    sockets.forEach(id => dict[id] = true)
-    return dict
-  }, {}))
+  // sockets: Array<{ id: string, connectedAt: number }>
+  const sockets = forEachRoom((arr, sockets) => {
+    // unique
+    sockets.forEach(s => {
+      if (!arr.find(({ id }) => s.id === id)) arr.push(s)
+    })
+    return arr
+  }, [])
 
   return { rooms, sockets }
 })
