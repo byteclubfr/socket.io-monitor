@@ -27,7 +27,7 @@ describe('Socket.io Monitor', () => {
 
   describe('Monitor: Emitter only', () => {
 
-    let ioClient, ioClientId, emitter
+    let ioClient, ioClientId, emitter, socket
 
     it('should init Monitor emitter', () => {
       const result = monitor.bind(ioServer, { server: false, port: 0 })
@@ -64,14 +64,29 @@ describe('Socket.io Monitor', () => {
       })
     })
 
-    it('should watch: room', cb => {
-      ioServer.once('connection', socket => {
+    it('should watch: room join', cb => {
+      ioServer.once('connection', _socket => {
+        socket = _socket
         setImmediate(() => socket.join('room1'))
       })
       ioClient = socketioClient(ioUrl)
       // Socket joins his own room: this is skipped
       // Then he joins the specific ones
       emitter.once('join', data => {
+        expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
+        expect(data).to.have.property('room').to.equal('room1')
+        cb()
+      })
+    })
+
+    it('should watch: room leave', cb => {
+      socket.on('goodbye', () => {
+        setImmediate(() => socket.leave('room1'))
+      })
+
+      ioClient.emit('goodbye')
+
+      emitter.once('leave', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
         expect(data).to.have.property('room').to.equal('room1')
         cb()
@@ -97,7 +112,7 @@ describe('Socket.io Monitor', () => {
 
   describe('Monitor: client/server', () => {
 
-    let ioClient, ioClientId, port, client, promiseOfInit
+    let ioClient, ioClientId, port, client, promiseOfInit, socket
 
     it('should init Monitor emitter & server', () => {
       const result = monitor.bind(ioServer, { server: true, port: 0 })
@@ -149,14 +164,29 @@ describe('Socket.io Monitor', () => {
       })
     })
 
-    it('should watch: room', cb => {
-      ioServer.once('connection', socket => {
+    it('should watch: room join', cb => {
+      ioServer.once('connection', _socket => {
+        socket = _socket
         setImmediate(() => socket.join('room1'))
       })
       ioClient = socketioClient(ioUrl)
       // Socket joins his own room: this is skipped
       // Then he joins the specific ones
       client.once('join', data => {
+        expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
+        expect(data).to.have.property('room').to.equal('room1')
+        cb()
+      })
+    })
+
+    it('should watch: room leave', cb => {
+      socket.on('goodbye', () => {
+        setImmediate(() => socket.leave('room1'))
+      })
+
+      ioClient.emit('goodbye')
+
+      client.once('leave', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
         expect(data).to.have.property('room').to.equal('room1')
         cb()
