@@ -17,12 +17,12 @@
   },
   "homepage": "https://github.com/byteclubfr/socket.io-monitor#readme",
   "dependencies": {
-    "avsc": "^5.0.1",
-    "debug": "^2.6.3"
+    "avsc": "^5.0.4",
+    "debug": "^2.6.8"
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "mocha": "^3.2.0",
+    "mocha": "^3.4.2",
     "socket.io": "^1.7.3",
     "socket.io-client": "^1.7.3"
   }
