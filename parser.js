@@ -9,7 +9,7 @@ const types = {
   auth: union([ infer({ authorized: true }), infer({ authorized: false, error: 'string' }) ]),
   init: infer({ rooms: [{ name: 'name', sockets: ['id'] }], sockets: [{ id: 'id', connectedAt: 1494426891618 }] }),
   broadcast: infer({ rooms: ['name'], flags: ['flag'], name: 'event name', args: ['json'] }),
-  join: infer({ id: 'id', room: 'name' }),
+  join: infer({ id: 'id', rooms: [ 'name' ] }),
   leave: infer({ id: 'id', room: 'name' }),
   leaveAll: infer({ id: 'id' }),
   connect: infer({ id: 'id' }),

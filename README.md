@@ -28,7 +28,7 @@ emitter.getState()
   sockets: [ { id: 'id1', connectedAt: 12345 }, { id: 'id2', connectedAt: 56789 }, … ]
 } */
 
-emitter.on('join', ({ id, room }) => console.log('socket %s joins room %s', id, room))
+emitter.on('join', ({ id, rooms }) => console.log('socket %s joins rooms %s', id, rooms))
 ```
 
 ## Usage (remote)
@@ -52,7 +52,7 @@ const client = monitor.connect({ port: 9042, host: 'localhost' })
 
 client.then(emitter => {
   console.log('connection OK')
-  emitter.on('join', ({ id, room }) => console.log('socket %s joins room %s', id, room))
+  emitter.on('join', ({ id, rooms }) => console.log('socket %s joins rooms %s', id, rooms))
 })
 ```
 
@@ -64,7 +64,7 @@ client.then(emitter => {
   * ``client`` is the remote monitor client (you can listen/emit to all *remote* events)
   * ``state`` is the initial state data, sent along *init* event
 * **broadcast** ``{ name, args, rooms, flags }``
-* **join** ``{ id, room }``
+* **join** ``{ id, rooms }``
 * **leave** ``{ id, room }``
 * **leaveAll** ``{ id }``
 * **connect** ``{ id }``

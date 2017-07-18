@@ -78,7 +78,7 @@ describe('Socket.io Monitor', () => {
       // Then he joins the specific ones
       emitter.once('join', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-        expect(data).to.have.property('room').to.equal('room1')
+        expect(data).to.have.property('rooms').to.eql([ 'room1' ])
         cb()
       })
     })
@@ -210,7 +210,7 @@ describe('Socket.io Monitor', () => {
       // Then he joins the specific ones
       client.once('join', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
-        expect(data).to.have.property('room').to.equal('room1')
+        expect(data).to.have.property('rooms').to.eql([ 'room1' ])
         cb()
       })
     })
