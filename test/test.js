@@ -60,6 +60,7 @@ describe('Socket.io Monitor', () => {
       ioClient.disconnect()
       emitter.once('disconnect', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string').to.equal(ioClientId)
+        ioClientId = null
         cb()
       })
     })
@@ -68,6 +69,9 @@ describe('Socket.io Monitor', () => {
       ioServer.once('connection', _socket => {
         socket = _socket
         setImmediate(() => socket.join('room1'))
+      })
+      emitter.once('connect', data => {
+        ioClientId = data.id
       })
       ioClient = socketioClient(ioUrl)
       // Socket joins his own room: this is skipped
@@ -89,6 +93,23 @@ describe('Socket.io Monitor', () => {
       emitter.once('leave', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
         expect(data).to.have.property('room').to.equal('room1')
+        cb()
+      })
+    })
+
+    it('should watch: room leaveAll', cb => {
+      socket.on('ghost', () => {
+        setImmediate(() => {
+          socket.join('room1')
+          socket.join('room2')
+          socket.leaveAll()
+        })
+      })
+
+      ioClient.emit('ghost')
+
+      emitter.once('leaveAll', data => {
+        expect(data).to.be.an('object').to.have.property('id').to.be.a('string').to.equal(ioClientId)
         cb()
       })
     })
@@ -169,6 +190,9 @@ describe('Socket.io Monitor', () => {
         socket = _socket
         setImmediate(() => socket.join('room1'))
       })
+      client.once('connect', data => {
+        ioClientId = data.id
+      })
       ioClient = socketioClient(ioUrl)
       // Socket joins his own room: this is skipped
       // Then he joins the specific ones
@@ -189,6 +213,23 @@ describe('Socket.io Monitor', () => {
       client.once('leave', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string')
         expect(data).to.have.property('room').to.equal('room1')
+        cb()
+      })
+    })
+
+    it('should watch: room leaveAll', cb => {
+      socket.on('ghost', () => {
+        setImmediate(() => {
+          socket.join('room1')
+          socket.join('room2')
+          socket.leaveAll()
+        })
+      })
+
+      ioClient.emit('ghost')
+
+      client.once('leaveAll', data => {
+        expect(data).to.be.an('object').to.have.property('id').to.be.a('string').to.equal(ioClientId)
         cb()
       })
     })
