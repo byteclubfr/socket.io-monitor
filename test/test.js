@@ -115,8 +115,8 @@ describe('Socket.io Monitor', () => {
     })
 
     it('should watch: broadcast', cb => {
-      ioClient = socketioClient(ioUrl)
-      ioClient.on('connect', () => {
+      const ioClient2 = socketioClient(ioUrl)
+      ioClient2.on('connect', () => {
         ioServer.volatile.to('room2').emit('globalevent', 1, false)
       })
       emitter.once('broadcast', data => {
@@ -125,6 +125,18 @@ describe('Socket.io Monitor', () => {
         expect(data).to.have.property('flags').to.eql([ 'volatile' ])
         expect(data).to.have.property('rooms').to.eql([ 'room2' ])
         expect(data).to.have.property('args').to.eql([ 1, false ])
+        cb()
+      })
+    })
+
+    it('should watch: recv', cb => {
+      ioClient.emit('hello', 'age', 42)
+
+      emitter.once('recv', data => {
+        expect(data).to.be.an('object')
+        expect(data).to.have.property('id').to.be.a('string').to.equal(ioClientId)
+        expect(data).to.have.property('name').to.be.a('string').to.equal('hello')
+        expect(data).to.have.property('args').to.eql([ 'age', 42 ])
         cb()
       })
     })
@@ -230,6 +242,18 @@ describe('Socket.io Monitor', () => {
 
       client.once('leaveAll', data => {
         expect(data).to.be.an('object').to.have.property('id').to.be.a('string').to.equal(ioClientId)
+        cb()
+      })
+    })
+
+    it('should watch: recv', cb => {
+      ioClient.emit('hello', 'age', 42)
+
+      client.once('recv', data => {
+        expect(data).to.be.an('object')
+        expect(data).to.have.property('id').to.be.a('string').to.equal(ioClientId)
+        expect(data).to.have.property('name').to.be.a('string').to.equal('hello')
+        expect(data).to.have.property('args').to.eql([ 'age', 42 ])
         cb()
       })
     })
