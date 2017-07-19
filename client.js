@@ -1,8 +1,6 @@
 'use strict'
 
 const { createConnection } = require('net')
-const EventEmitter = require('events')
-const debug = require('debug')('socket.io-monitor')
 const protocol = require('./protocol')
 
 

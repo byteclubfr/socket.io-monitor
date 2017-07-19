@@ -20,7 +20,7 @@ const protocol = require('./protocol')
 module.exports = (io, options = {}) => {
   const { server = true } = options
 
-  const emitter = initEmitter(io, options)
+  const emitter = initEmitter(io)
 
   return server
     ? { emitter, server: initServer(emitter, options) }
@@ -53,10 +53,10 @@ const monkeyPatch = (object, method, fn) => {
 }
 
 
-const initEmitter = exports.initEmitter = (io, options = {}) => {
+const initEmitter = exports.initEmitter = (io) => {
   const e = new EventEmitter()
 
-  const adapter = io.sockets.adapter
+  const { adapter } = io.sockets
 
   // Monitor broadcasts
   monkeyPatch(adapter, 'broadcast', (packet, { rooms = [], flags = {} }) => {
@@ -111,13 +111,13 @@ const initEmitter = exports.initEmitter = (io, options = {}) => {
     e
     .on('string', ({ id, string }) => debug('string', id, string))
     .on('broadcast', ({ name, args, rooms, flags }) => debug('broadcast', name, args, rooms, flags))
-    .on('join', ({ id, room }) => debug('join', id, room))
+    .on('join', ({ id, rooms }) => debug('join', id, rooms))
     .on('leave', ({ id, room }) => debug('leave', id, room))
     .on('leaveAll', ({ id }) => debug('leaveAll', id))
     .on('connect', ({ id }) => debug('connect', id))
     .on('disconnect', ({ id }) => debug('disconnect', id))
-    .on('emit', ({ id, name, args }) => debug('emit', id, name))
-    .on('recv', ({ id, name, args }) => debug('recv', id, name))
+    .on('emit', ({ id, name, args }) => debug('emit', id, name, args))
+    .on('recv', ({ id, name, args }) => debug('recv', id, name, args))
   }
 
   return e
@@ -163,7 +163,7 @@ const connHandler = (emitter, options) => {
 
   return socket => {
     socket.on('error', err => debug('socket error', err))
-    socket.on('error', noop)
+    socket.on('error', onError)
 
     const proto = protocol.bindSocket(socket)
 
