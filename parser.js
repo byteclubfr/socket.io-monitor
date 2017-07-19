@@ -37,12 +37,7 @@ const events = [
   { name: 'error',      code: '99', type: types.error },
 ]
 
-const findEvent = (f, v) => {
-  const found = events.find(e => e[f] === v)
-  return found || null
-}
-
-const parseArg = json => JSON.parse(json)
+const findEvent = (f, v) => events.find(e => e[f] === v)
 
 exports.parse = buffer => {
   const code = buffer.slice(0, 2).toString('utf8')
@@ -51,14 +46,14 @@ exports.parse = buffer => {
     throw new Error('Unknown event code: ' + code)
   }
 
-  const name = event.name
+  const { name } = event
   debug('parse', { name, code }, buffer)
   const data = buffer.length > 2
     ? event.type.fromBuffer(buffer.slice(2))
     : null
 
   if (data.args) {
-    data.args = data.args.map(parseArg)
+    data.args = data.args.map(JSON.parse)
   }
 
   debug('parsed', { name, code }, data)
@@ -68,18 +63,16 @@ exports.parse = buffer => {
 
 const emptyBuffer = new Buffer('')
 
-const stringifyArg = value => JSON.stringify(value)
-
 exports.stringify = (name, data = null) => {
   const event = findEvent('name', name)
   if (!event) {
     throw new Error('Unknown event name: ' + name)
   }
 
-  const code = event.code
+  const { code } = event
   debug('stringify', { name, code }, data)
   const validData = data.args
-    ? Object.assign({}, data, { args: data.args.map(stringifyArg) })
+    ? Object.assign({}, data, { args: data.args.map(JSON.stringify) })
     : data
   const buffer = data === null ? emptyBuffer : event.type.toBuffer(validData)
   return Buffer.concat([ new Buffer(code), buffer ])
